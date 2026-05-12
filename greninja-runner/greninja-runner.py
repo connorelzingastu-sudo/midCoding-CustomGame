@@ -27,16 +27,17 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Basic Platformer Game")
 clock = pygame.time.Clock()
 
-def make_greninja(width, height):
-    fullres = pygame.image.load("greninja.png").convert_alpha()
+def load_sprite_surface(file_name, width, height):
+    fullres = pygame.image.load(file_name).convert_alpha()
     return pygame.transform.smoothscale(fullres, (width, height))
+    
 
 
 # ===== PLAYER =====
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = make_greninja(56,36)
+        self.image = load_sprite_surface("greninja.png", 56, 36)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -124,8 +125,7 @@ class Coin(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((30, 30))
-        self.image.fill(RED)
+        self.image = load_sprite_surface("Team_Rocket_Grunt.png", 42, 65)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
