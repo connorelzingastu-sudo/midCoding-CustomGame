@@ -30,14 +30,14 @@ clock = pygame.time.Clock()
 def load_sprite_surface(file_name, width, height):
     fullres = pygame.image.load(file_name).convert_alpha()
     return pygame.transform.smoothscale(fullres, (width, height))
+
+
     
-
-
 # ===== PLAYER =====
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = load_sprite_surface("greninja.png", 56, 36)
+        self.image = load_sprite_surface("greninja-runner/greninja.png", 56, 36)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -125,7 +125,7 @@ class Coin(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = load_sprite_surface("Team_Rocket_Grunt.png", 42, 65)
+        self.image = load_sprite_surface("greninja-runner/Team_Rocket_Grunt.png", 42, 65)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
