@@ -64,9 +64,13 @@ class Player(pygame.sprite.Sprite):
             self.is_jumping = True
     
         if keys[pygame.K_f]:
+            forward = True
+            if keys[pygame.K_LEFT]:
+                forward = False
             if self.shurikens:
                 shuriken = self.shurikens.pop()
-                shuriken.throw()
+                shuriken.throw(self.rect.x, self.rect.y, forward)
+
     def apply_gravity(self):
         self.vel_y += self.gravity
         self.rect.y += self.vel_y
@@ -123,40 +127,41 @@ class WaterShuriken(pygame.sprite.Sprite):
         self.collected = False
         self.thrown = False
 
-    def throw(self, forward=True):
+    def throw(self, x, y, forward=True):
+        self.rect.x = x
+        self.rect.y = y
         if forward:
             self.vel_x = 5
         else:
             self.vel_x = -5
         self.thrown = True
-
+        
     def stop(self):
         self.vel_x = 0
         self.thrown = False
         self.collected = False
 
     def update(self, platforms, enemies):    
-
-        self.rect.x += self.vel_x
-        
-        # Keep shuriken on screen horizontally
-        if self.rect.x < 0:
-            self.rect.x = 0
-            self.stop()
-        if self.rect.x > SCREEN_WIDTH - self.rect.width:
-            self.rect.x = SCREEN_WIDTH - self.rect.width
-            self.stop()
-        
-        # Check collision with platforms
-        for platform in platforms:
-            if self.rect.colliderect(platform.rect):
+        if self.thrown:
+            self.rect.x += self.vel_x
+            
+            # Keep shuriken on screen horizontally
+            if self.rect.x < 0:
+                self.rect.x = 0
                 self.stop()
-
-        # Check collision with enemies
-        for enemy in enemies:
-            if self.rect.colliderect(enemy.rect):
+            if self.rect.x > SCREEN_WIDTH - self.rect.width:
+                self.rect.x = SCREEN_WIDTH - self.rect.width
                 self.stop()
-                enemy.take_damage()             
+        
+            for platform in platforms:
+                if self.rect.colliderect(platform.rect):
+                    self.stop()
+
+            # Check collision with enemies
+            for enemy in enemies:
+                if self.rect.colliderect(enemy.rect):
+                    self.stop()
+                    enemy.take_damage()             
 
     
     def draw(self, surface):
