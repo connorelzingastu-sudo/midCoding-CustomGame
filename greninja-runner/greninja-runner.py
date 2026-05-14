@@ -48,10 +48,14 @@ class Player(pygame.sprite.Sprite):
         self.gravity = 0.6
         self.jump_power = -15
         self.speed = 5
+        self.throwing_cooldown = 0
 
         self.shurikens = []
     
     def handle_input(self, keys):
+        # decrement the cooldown timer to be ready to throw
+        self.throwing_cooldown = max(0, self.throwing_cooldown - 1)
+
         if keys[pygame.K_LEFT]:
             self.vel_x = -self.speed
         elif keys[pygame.K_RIGHT]:
@@ -64,12 +68,14 @@ class Player(pygame.sprite.Sprite):
             self.is_jumping = True
     
         if keys[pygame.K_f]:
-            forward = True
-            if keys[pygame.K_LEFT]:
-                forward = False
-            if self.shurikens:
-                shuriken = self.shurikens.pop()
-                shuriken.throw(self.rect.x, self.rect.y, forward)
+            if self.throwing_cooldown ==0:
+                self.throwing_cooldown = 10
+                forward = True
+                if keys[pygame.K_LEFT]:
+                    forward = False
+                if self.shurikens:
+                    shuriken = self.shurikens.pop()
+                    shuriken.throw(self.rect.x, self.rect.y, forward)
 
     def apply_gravity(self):
         self.vel_y += self.gravity
@@ -241,8 +247,7 @@ class Enemy(pygame.sprite.Sprite):
 class Goal(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((50, 50))
-        self.image.fill(ORANGE)
+        self.image = load_sprite_surface("greninja-runner/Premier_Ball.png",50, 50)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
