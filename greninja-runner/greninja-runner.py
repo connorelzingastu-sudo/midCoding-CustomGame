@@ -114,6 +114,38 @@ class Platform(pygame.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
+# ===== PLATFORM =====
+class HealthBar(object):
+    def __init__(self, x, y):
+        super().__init__()
+        self.width = 40
+        self.color = GREEN
+        self.background_rect = pygame.Rect(0, 0, self.width, 10)
+        self.health_rect = pygame.Rect(0, 0, self.width, 10)
+        self.update_position(x,y)
+        self.health = 100
+
+    def update_position(self, x, y):
+        self.background_rect.x = x
+        self.background_rect.y = y
+        self.health_rect.x = x
+        self.health_rect.y = y
+
+    def update_health(self, health):
+        if health >= 80:
+            self.color = GREEN
+        elif health >= 40:
+            self.color = YELLOW
+        else:
+            self.color = RED
+        self.health = health
+        self.health_rect.width = self.width * health / 100
+  
+    def draw(self, surface):
+        pygame.draw.rect(surface, WHITE, self.background_rect)
+        pygame.draw.rect(surface, self.color, self.health_rect)
+        
+
 
 # ===== WaterShuriken (Collectible) =====
 class WaterShuriken(pygame.sprite.Sprite):
@@ -177,18 +209,23 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.health = 100
+        self.health = HealthBar(x, y - 20)
         self.speed = 2
         self.direction = 1
         self.left_bound = x - 80
         self.right_bound = x + 80
+        self.defeated = False
 
     def take_damage(self):
-        self.health = max(0, self.health -10) 
+        current_health = self.health.health
+        new_health = max(0, current_health -10)
+        self.health.update_health(new_health)
+        self.defeated = new_health != 0
 
 
     def update(self):
         self.rect.x += self.speed * self.direction
+        self.health.update_position(self.rect.x, self.rect.y-20)
         
         # Change direction at bounds
         if self.rect.x <= self.left_bound or self.rect.x >= self.right_bound:
@@ -196,6 +233,7 @@ class Enemy(pygame.sprite.Sprite):
     
     def draw(self, surface):
         surface.blit(self.image, self.rect)
+        self.health.draw(surface)
 
 
 # ===== GOAL/FINISH AREA =====
@@ -224,11 +262,14 @@ class Game:
             Platform(500, 400, 150, 20),
             Platform(100, 300, 150, 20),
             Platform(600, 300, 150, 20),
+            Platform(100, 450, 50, 20),
         ]
         
         # Create coin
         self.shurikens = [
-            WaterShuriken(550, 350)
+            WaterShuriken(550, 350),
+            WaterShuriken(500, 500),
+            WaterShuriken(100, 500)
         ]
         
         # Create enemy
