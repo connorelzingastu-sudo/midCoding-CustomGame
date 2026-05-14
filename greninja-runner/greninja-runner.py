@@ -220,7 +220,7 @@ class Enemy(pygame.sprite.Sprite):
         current_health = self.health.health
         new_health = max(0, current_health -10)
         self.health.update_health(new_health)
-        self.defeated = new_health != 0
+        self.defeated = new_health == 0
 
 
     def update(self):
@@ -232,8 +232,9 @@ class Enemy(pygame.sprite.Sprite):
             self.direction *= -1
     
     def draw(self, surface):
-        surface.blit(self.image, self.rect)
-        self.health.draw(surface)
+        if not self.defeated:
+            surface.blit(self.image, self.rect)
+            self.health.draw(surface)
 
 
 # ===== GOAL/FINISH AREA =====
@@ -262,7 +263,7 @@ class Game:
             Platform(500, 400, 150, 20),
             Platform(100, 300, 150, 20),
             Platform(600, 300, 150, 20),
-            Platform(100, 450, 50, 20),
+            Platform(50, 450, 50, 20),
         ]
         
         # Create coin
