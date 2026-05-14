@@ -1,6 +1,6 @@
 """
 Basic Platformer Game Example
-Demonstrates: Player, Platforms, Coins, Enemy, Goal, Score, Win/Lose conditions
+Demonstrates: Player, Platforms, Shurikens, Enemy, Goal, Score, Win/Lose conditions
 """
 
 import pygame
@@ -48,6 +48,8 @@ class Player(pygame.sprite.Sprite):
         self.gravity = 0.6
         self.jump_power = -15
         self.speed = 5
+
+        self.shurikens = []
     
     def handle_input(self, keys):
         if keys[pygame.K_LEFT]:
@@ -61,6 +63,10 @@ class Player(pygame.sprite.Sprite):
             self.vel_y = self.jump_power
             self.is_jumping = True
     
+        if keys[pygame.K_f]:
+            if self.shurikens:
+                shuriken = self.shurikens.pop()
+                shuriken.throw()
     def apply_gravity(self):
         self.vel_y += self.gravity
         self.rect.y += self.vel_y
@@ -105,19 +111,56 @@ class Platform(pygame.sprite.Sprite):
         surface.blit(self.image, self.rect)
 
 
-# ===== COIN (Collectible) =====
-class Coin(pygame.sprite.Sprite):
+# ===== WaterShuriken (Collectible) =====
+class WaterShuriken(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((20, 20))
-        self.image.fill(YELLOW)
+        self.image = load_sprite_surface("greninja-runner/water_shuriken.png", 24, 24)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.vel_x = 0
         self.collected = False
+        self.thrown = False
+
+    def throw(self, forward=True):
+        if forward:
+            self.vel_x = 5
+        else:
+            self.vel_x = -5
+        self.thrown = True
+
+    def stop(self):
+        self.vel_x = 0
+        self.thrown = False
+        self.collected = False
+
+    def update(self, platforms, enemies):    
+
+        self.rect.x += self.vel_x
+        
+        # Keep shuriken on screen horizontally
+        if self.rect.x < 0:
+            self.rect.x = 0
+            self.stop()
+        if self.rect.x > SCREEN_WIDTH - self.rect.width:
+            self.rect.x = SCREEN_WIDTH - self.rect.width
+            self.stop()
+        
+        # Check collision with platforms
+        for platform in platforms:
+            if self.rect.colliderect(platform.rect):
+                self.stop()
+
+        # Check collision with enemies
+        for enemy in enemies:
+            if self.rect.colliderect(enemy.rect):
+                self.stop()
+                enemy.take_damage()             
+
     
     def draw(self, surface):
-        if not self.collected:
+        if not self.collected or self.thrown:
             surface.blit(self.image, self.rect)
 
 
@@ -129,12 +172,16 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        
+        self.health = 100
         self.speed = 2
         self.direction = 1
         self.left_bound = x - 80
         self.right_bound = x + 80
-    
+
+    def take_damage(self):
+        self.health = max(0, self.health -10) 
+
+
     def update(self):
         self.rect.x += self.speed * self.direction
         
@@ -175,10 +222,14 @@ class Game:
         ]
         
         # Create coin
-        self.coin = Coin(550, 350)
+        self.shurikens = [
+            WaterShuriken(550, 350)
+        ]
         
         # Create enemy
-        self.enemy = Enemy(300, 380)
+        self.enemies = [
+            Enemy(300, 380)
+        ]
         
         # Create goal
         self.goal = Goal(700, 200)
@@ -201,17 +252,25 @@ class Game:
             self.game_over = True
         
         self.player.update(self.platforms)
-        self.enemy.update()
+
+        for enemy in self.enemies:
+            enemy.update()
+
+        for shuriken in self.shurikens:
+            shuriken.update(self.platforms, self.enemies)
         
-        # Check coin collision
-        if (not self.coin.collected and 
-            self.player.rect.colliderect(self.coin.rect)):
-            self.coin.collected = True
-            self.score += 10
+        # Check WaterShuriken collection
+        available_shurikens = [s for s in self.shurikens if not s.collected]
+        for shuriken in available_shurikens:
+            if self.player.rect.colliderect(shuriken.rect):
+                shuriken.collected = True
+                self.score += 10
+                self.player.shurikens.append(shuriken)
         
         # Check enemy collision (lose condition)
-        if self.player.rect.colliderect(self.enemy.rect):
-            self.game_over = True
+        for enemy in self.enemies:
+            if self.player.rect.colliderect(enemy.rect):
+                self.game_over = True
         
         # Check goal collision (win condition)
         if self.player.rect.colliderect(self.goal.rect):
@@ -224,8 +283,12 @@ class Game:
         for platform in self.platforms:
             platform.draw(screen)
         
-        self.coin.draw(screen)
-        self.enemy.draw(screen)
+        for shuriken in self.shurikens:
+            shuriken.draw(screen)
+
+        for enemy in self.enemies:   
+            enemy.draw(screen)
+
         self.goal.draw(screen)
         self.player.draw(screen)
         
