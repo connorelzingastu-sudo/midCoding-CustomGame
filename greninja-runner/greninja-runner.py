@@ -1,6 +1,12 @@
 """
-Basic Platformer Game Example
-Demonstrates: Player, Platforms, Shurikens, Enemy, Goal, Score, Win/Lose conditions
+Greninja runner, a platformer game
+Collect and throw water shurikens to defeat Team Rocket
+
+Controls:
+---------
+Left/Right arrow: move Greninja
+Spacebar: jump
+f: throw
 """
 
 import pygame
@@ -27,36 +33,43 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("GRENINJA RUNNER")
 clock = pygame.time.Clock()
 
+# Load an image as a pygame surface and scale it to width, height
 def load_sprite_surface(file_name, width, height):
     fullres = pygame.image.load(file_name).convert_alpha()
     return pygame.transform.smoothscale(fullres, (width, height))
-
-
-    
+   
 # ===== PLAYER =====
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.image = load_sprite_surface("greninja-runner/greninja.png", 56, 36)
+
+        # Player location and movement
         self.rect = self.image.get_rect()
         self.rect.x = x
-        self.rect.y = y
-        
+        self.rect.y = y 
         self.vel_y = 0
         self.vel_x = 0
         self.is_jumping = False
         self.gravity = 0.6
         self.jump_power = -15
         self.speed = 5
+
+        # Keeps track of whether player is ready to throw
         self.throwing_cooldown = 0
+
+        # Direction that player is facing for throwing
+        # Latches to last movement
         self.looking_forward = True
 
+        # List of all of the shurikens that are collected
         self.shurikens = []
     
     def handle_input(self, keys):
-        # decrement the cooldown timer to be ready to throw
+        # Decrement the cooldown timer to be ready to throw
         self.throwing_cooldown = max(0, self.throwing_cooldown - 1)
 
+        # Movement
         if keys[pygame.K_LEFT]:
             self.vel_x = -self.speed
             self.looking_forward = False
@@ -65,13 +78,13 @@ class Player(pygame.sprite.Sprite):
             self.looking_forward = True
         else:
             self.vel_x = 0
-        
         if keys[pygame.K_SPACE] and not self.is_jumping:
             self.vel_y = self.jump_power
             self.is_jumping = True
     
+        # Throwing if we are ready
         if keys[pygame.K_f]:
-            if self.throwing_cooldown ==0:
+            if self.throwing_cooldown == 0:
                 self.throwing_cooldown = 10
                 if self.shurikens:
                     shuriken = self.shurikens.pop()
@@ -120,7 +133,7 @@ class Platform(pygame.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
-# ===== PLATFORM =====
+# ===== HealthBar =====
 class HealthBar(object):
     def __init__(self, x, y):
         super().__init__()
@@ -131,6 +144,8 @@ class HealthBar(object):
         self.update_position(x,y)
         self.health = 100
 
+    # Update the position of the health rect and background rect
+    # at the same time
     def update_position(self, x, y):
         self.background_rect.x = x
         self.background_rect.y = y
@@ -138,6 +153,7 @@ class HealthBar(object):
         self.health_rect.y = y
 
     def update_health(self, health):
+        # Color based on how low the health is
         if health >= 80:
             self.color = GREEN
         elif health >= 40:
@@ -145,6 +161,8 @@ class HealthBar(object):
         else:
             self.color = RED
         self.health = health
+
+        # Scale the size of the bar with health value
         self.health_rect.width = self.width * health / 100
   
     def draw(self, surface):
@@ -162,9 +180,15 @@ class WaterShuriken(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
         self.vel_x = 0
+
+        # Has been collected by the playre
         self.collected = False
+
+        # Is currently traveling
         self.thrown = False
 
+    # Makes the shuriken move with constant horizontal speed
+    # forwards or backwards
     def throw(self, x, y, forward=True):
         self.rect.x = x
         self.rect.y = y
@@ -173,12 +197,15 @@ class WaterShuriken(pygame.sprite.Sprite):
         else:
             self.vel_x = -5
         self.thrown = True
-        
+
+    # Update variables that need to be reset when stopped    
     def stop(self):
         self.vel_x = 0
         self.thrown = False
         self.collected = False
 
+    # Update the state of the shuriken at each frame,
+    # checking for collisions with platforms and enemies
     def update(self, platforms, enemies):
         score = 0  
         if self.thrown:
@@ -196,7 +223,7 @@ class WaterShuriken(pygame.sprite.Sprite):
                 if self.rect.colliderect(platform.rect):
                     self.stop()
 
-            # Check collision with enemies
+            # Check collision with enemies, inflicting damage
             for enemy in enemies:
                 if self.rect.colliderect(enemy.rect):
                     self.stop()
@@ -214,16 +241,23 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.image = load_sprite_surface("greninja-runner/Team_Rocket_Grunt.png", 42, 65)
+        
+        # Movement and position
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.health = HealthBar(x, y - 20)
         self.speed = 2
         self.direction = 1
         self.left_bound = x - 80
         self.right_bound = x + 80
+
+        # Keep track of the enemy's health with HealthBar
+        self.health = HealthBar(x, y - 20)
+        
+        # When their health goes to 0 they are defeated
         self.defeated = False
 
+    # Update the health bar and check for defeat
     def take_damage(self):
         current_health = self.health.health
         new_health = max(0, current_health -20)
@@ -276,7 +310,7 @@ class Game:
             Platform(50, 200, 50, 20),
         ]
         
-        # Create coin
+        # Create shurikens
         self.shurikens = [
             WaterShuriken(550, 350),
             WaterShuriken(500, 500),
@@ -291,7 +325,7 @@ class Game:
         ]
         
         # Create goal
-        self.goal_ready = False
+        self.goal_ready = False # Goal appears after enemies are defeated
         self.goal = Goal(715, 35)
         
         self.score = 0
@@ -320,7 +354,7 @@ class Game:
             score = shuriken.update(self.platforms, self.enemies)
             self.score += score
         
-        # Check WaterShuriken collection
+        # Check WaterShuriken collection, filter out already collected
         available_shurikens = [s for s in self.shurikens if not s.collected]
         for shuriken in available_shurikens:
             if self.player.rect.colliderect(shuriken.rect):
@@ -328,9 +362,10 @@ class Game:
                 self.score += 10
                 self.player.shurikens.append(shuriken)
         
-        # Check enemy collision (lose condition)
+        # Check enemy collision (lose condition), filter out defeated
         live_enemies = [e for e in self.enemies if not e.defeated]
         if not live_enemies:
+            # Goal appears after enemies defeated
             self.goal_ready = True
         for enemy in live_enemies:
             if self.player.rect.colliderect(enemy.rect):
