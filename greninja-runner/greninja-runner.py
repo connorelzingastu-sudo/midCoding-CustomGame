@@ -24,7 +24,7 @@ ORANGE = (255, 165, 0)
 
 # Create screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Basic Platformer Game")
+pygame.display.set_caption("GRENINJA RUNNER")
 clock = pygame.time.Clock()
 
 def load_sprite_surface(file_name, width, height):
@@ -261,6 +261,9 @@ class Goal(pygame.sprite.Sprite):
 # ===== GAME =====
 class Game:
     def __init__(self):
+        # Background scene
+        self.image = load_sprite_surface("greninja-runner/stadium.jpg", SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.image.set_alpha(80)
         self.player = Player(50, 400)
         
         # Create platforms
@@ -289,7 +292,7 @@ class Game:
         
         # Create goal
         self.goal_ready = False
-        self.goal = Goal(700, 50)
+        self.goal = Goal(715, 35)
         
         self.score = 0
         self.game_over = False
@@ -339,6 +342,7 @@ class Game:
     
     def draw(self):
         screen.fill(WHITE)
+        screen.blit(self.image,(0,0))
         
         # Draw game elements
         for platform in self.platforms:
@@ -398,3 +402,5 @@ class Game:
 if __name__ == "__main__":
     game = Game()
     game.run()
+
+
