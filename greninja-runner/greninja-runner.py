@@ -49,6 +49,7 @@ class Player(pygame.sprite.Sprite):
         self.jump_power = -15
         self.speed = 5
         self.throwing_cooldown = 0
+        self.looking_forward = True
 
         self.shurikens = []
     
@@ -58,8 +59,10 @@ class Player(pygame.sprite.Sprite):
 
         if keys[pygame.K_LEFT]:
             self.vel_x = -self.speed
+            self.looking_forward = False
         elif keys[pygame.K_RIGHT]:
             self.vel_x = self.speed
+            self.looking_forward = True
         else:
             self.vel_x = 0
         
@@ -70,12 +73,9 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_f]:
             if self.throwing_cooldown ==0:
                 self.throwing_cooldown = 10
-                forward = True
-                if keys[pygame.K_LEFT]:
-                    forward = False
                 if self.shurikens:
                     shuriken = self.shurikens.pop()
-                    shuriken.throw(self.rect.x, self.rect.y, forward)
+                    shuriken.throw(self.rect.x, self.rect.y, self.looking_forward)
 
     def apply_gravity(self):
         self.vel_y += self.gravity
@@ -284,6 +284,7 @@ class Game:
         ]
         
         # Create goal
+        self.goal_ready = False
         self.goal = Goal(700, 200)
         
         self.score = 0
@@ -320,12 +321,15 @@ class Game:
                 self.player.shurikens.append(shuriken)
         
         # Check enemy collision (lose condition)
-        for enemy in self.enemies:
+        live_enemies = [e for e in self.enemies if not e.defeated]
+        if not live_enemies:
+            self.goal_ready = True
+        for enemy in live_enemies:
             if self.player.rect.colliderect(enemy.rect):
                 self.game_over = True
         
         # Check goal collision (win condition)
-        if self.player.rect.colliderect(self.goal.rect):
+        if self.goal_ready and self.player.rect.colliderect(self.goal.rect):
             self.won = True
     
     def draw(self):
@@ -340,9 +344,14 @@ class Game:
 
         for enemy in self.enemies:   
             enemy.draw(screen)
+        
+        if self.goal_ready:
+            self.goal.draw(screen)
 
-        self.goal.draw(screen)
-        self.player.draw(screen)
+        # Greninja should disappear into the pokeball
+        # when reaching the goal
+        if not self.won:
+            self.player.draw(screen)
         
         # Draw score
         font = pygame.font.Font(None, 36)
