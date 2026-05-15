@@ -179,7 +179,8 @@ class WaterShuriken(pygame.sprite.Sprite):
         self.thrown = False
         self.collected = False
 
-    def update(self, platforms, enemies):    
+    def update(self, platforms, enemies):
+        score = 0  
         if self.thrown:
             self.rect.x += self.vel_x
             
@@ -199,8 +200,9 @@ class WaterShuriken(pygame.sprite.Sprite):
             for enemy in enemies:
                 if self.rect.colliderect(enemy.rect):
                     self.stop()
-                    enemy.take_damage()             
-
+                    enemy.take_damage()
+                    score += 50          
+        return score
     
     def draw(self, surface):
         if not self.collected or self.thrown:
@@ -224,7 +226,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def take_damage(self):
         current_health = self.health.health
-        new_health = max(0, current_health -10)
+        new_health = max(0, current_health -20)
         self.health.update_health(new_health)
         self.defeated = new_health == 0
 
@@ -264,28 +266,30 @@ class Game:
         # Create platforms
         self.platforms = [
             Platform(0, SCREEN_HEIGHT - 40, SCREEN_WIDTH, 40),  # Ground
-            Platform(200, 450, 150, 20),
-            Platform(500, 400, 150, 20),
-            Platform(100, 300, 150, 20),
-            Platform(600, 300, 150, 20),
-            Platform(50, 450, 50, 20),
+            Platform(200, 450, 200, 20),
+            Platform(500, 380, 100, 20),
+            Platform(100, 315, 50, 20),
+            Platform(600, 250, 20, 20),
+            Platform(50, 200, 50, 20),
         ]
         
         # Create coin
         self.shurikens = [
             WaterShuriken(550, 350),
             WaterShuriken(500, 500),
-            WaterShuriken(100, 500)
+            WaterShuriken(100, 500),
+            WaterShuriken(50, 150)
         ]
         
         # Create enemy
         self.enemies = [
-            Enemy(300, 380)
+            Enemy(300, 380),
+            Enemy(200, SCREEN_HEIGHT - 105)
         ]
         
         # Create goal
         self.goal_ready = False
-        self.goal = Goal(700, 200)
+        self.goal = Goal(700, 50)
         
         self.score = 0
         self.game_over = False
@@ -310,7 +314,8 @@ class Game:
             enemy.update()
 
         for shuriken in self.shurikens:
-            shuriken.update(self.platforms, self.enemies)
+            score = shuriken.update(self.platforms, self.enemies)
+            self.score += score
         
         # Check WaterShuriken collection
         available_shurikens = [s for s in self.shurikens if not s.collected]
